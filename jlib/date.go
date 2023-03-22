@@ -144,9 +144,11 @@ func parseTime(s string, picture string) (time.Time, error) {
 		formattedTime = trimmedDateTime[:len(time.DateOnly)]
 	}
 
-	//if strings.Contains("T", formattedTime) && !strings.Contains("T", layout) {
-	//	formattedTime = strings.Replace(formattedTime, "T", "", -1)
-	//}
+	if strings.Contains(formattedTime, "T") && !strings.Contains(layout, "T") {
+		formattedTime = strings.ReplaceAll(formattedTime, "T", "")
+	} else if !strings.Contains(formattedTime, "T") && strings.Contains(layout, "T") {
+		trimmedLayout = strings.ReplaceAll(trimmedLayout, "T", "")
+	}
 
 	t, err := time.Parse(trimmedLayout, formattedTime)
 	if err != nil {
