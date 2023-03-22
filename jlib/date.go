@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/xiatechs/jsonata-go/jlib/jxpath"
 	"github.com/xiatechs/jsonata-go/jtypes"
@@ -133,17 +135,36 @@ func parseTime(s string, picture string) (time.Time, error) {
 	// Replace -07:00 with Z07:00
 	layout = reMinus7.ReplaceAllString(layout, "Z$1")
 
-	var formattedTime = s
+	// first trim whitespace to remove and differences in the date time string and layout
+	trimmedDateTime := stripSpaces(s)
+	trimmedLayout := stripSpaces(layout)
+
+	var formattedTime = trimmedDateTime
 	if layout == time.DateOnly {
-		formattedTime = s[:len(time.DateOnly)]
+		formattedTime = trimmedDateTime[:len(time.DateOnly)]
 	}
 
-	t, err := time.Parse(layout, formattedTime)
+	//if strings.Contains("T", formattedTime) && !strings.Contains("T", layout) {
+	//	formattedTime = strings.Replace(formattedTime, "T", "", -1)
+	//}
+
+	t, err := time.Parse(trimmedLayout, formattedTime)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("could not parse time %q", s)
 	}
 
 	return t, nil
+}
+
+func stripSpaces(str string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) {
+			// if the character is a space, drop it
+			return -1
+		}
+		// else keep it in the string
+		return r
+	}, str)
 }
 
 func msToTime(ms int64) time.Time {
