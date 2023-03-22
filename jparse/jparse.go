@@ -174,7 +174,7 @@ func Parse(expr string) (root Node, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if e, ok := r.(*Error); ok {
-				err = e
+				root, err = nil, e
 				return
 			}
 			panic(r)
