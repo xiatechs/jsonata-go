@@ -142,4 +142,14 @@ func TestToMillis(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+
+	t.Run("2023-01-31T10:44:59.800 can be parsed without T in format", func(t *testing.T) {
+		picture.Set(reflect.ValueOf("[Y0001]-[M01]-[D01][H01]:[m01]:[s01]"))
+
+		// time string is cut down to match the layout provided
+		_, err := jlib.ToMillis("2023-01-31T10:44:59.800", picture, tz)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 }
