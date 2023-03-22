@@ -133,7 +133,12 @@ func parseTime(s string, picture string) (time.Time, error) {
 	// Replace -07:00 with Z07:00
 	layout = reMinus7.ReplaceAllString(layout, "Z$1")
 
-	t, err := time.Parse(layout, s)
+	var formatedTime = s
+	if layout == time.DateOnly {
+		formatedTime = s[:len(time.DateOnly)]
+	}
+
+	t, err := time.Parse(layout, formatedTime)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("could not parse time %q", s)
 	}

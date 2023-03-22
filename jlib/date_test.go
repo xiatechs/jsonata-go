@@ -122,11 +122,13 @@ func TestToMillis(t *testing.T) {
 	var picture jtypes.OptionalString
 	var tz jtypes.OptionalString
 
-	picture.Set(reflect.ValueOf("[Y0001]-[M01]-[D01]T[H01]:[m01]:[s01] [P]"))
+	t.Run("2023-01-31T10:44:59.800 is truncated to [Y0001]-[M01]-[D01]", func(t *testing.T) {
+		picture.Set(reflect.ValueOf("[Y0001]-[M01]-[D01]"))
 
-	// Time string must be an exact match to the picture layout
-	_, err := jlib.ToMillis("2023-01-31T10:44:59.800 am", picture, tz)
-	if err != nil {
-		t.Fatal(err)
-	}
+		// time string is cut down to match the layout provided
+		_, err := jlib.ToMillis("2023-01-31T10:44:59.800", picture, tz)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 }
