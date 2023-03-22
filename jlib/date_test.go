@@ -172,4 +172,12 @@ func TestToMillis(t *testing.T) {
 			t.Error(err.Error())
 		}
 	})
+
+	t.Run("No picture is passed to the to millis function", func(t *testing.T) {
+		// time string is cut down to match the layout provided
+		_, err := jlib.ToMillis("2023-01-31T10:47:06.260", picture, tz)
+		if err != nil {
+			t.Error(err.Error())
+		}
+	})
 }

@@ -6,6 +6,7 @@ package jlib
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -135,23 +136,47 @@ func parseTime(s string, picture string) (time.Time, error) {
 	// Replace -07:00 with Z07:00
 	layout = reMinus7.ReplaceAllString(layout, "Z$1")
 
-	// first trim whitespace to remove and differences in the date time string and layout
-	trimmedDateTime := stripSpaces(s)
-	trimmedLayout := stripSpaces(layout)
-
-	var formattedTime = trimmedDateTime
+	var formattedTime = s
 	if layout == time.DateOnly {
-		formattedTime = trimmedDateTime[:len(time.DateOnly)]
+		formattedTime = formattedTime[:len(time.DateOnly)]
+	}
+
+	if layout == time.DateTime {
+		formattedTime = formattedTime[:len(time.DateTime)]
+	}
+
+	// If the layout contains a time zone but the date string doesn't remove it.
+	if layout == time.RFC3339 {
+		if !strings.Contains(formattedTime, "Z") {
+			layout = layout[:len(time.DateTime)]
+		}
 	}
 
 	if strings.Contains(formattedTime, "T") && !strings.Contains(layout, "T") {
 		formattedTime = strings.ReplaceAll(formattedTime, "T", "")
 	} else if !strings.Contains(formattedTime, "T") && strings.Contains(layout, "T") {
-		trimmedLayout = strings.ReplaceAll(trimmedLayout, "T", "")
+		layout = strings.ReplaceAll(layout, "T", "")
 	}
 
-	t, err := time.Parse(trimmedLayout, formattedTime)
+	// trim whitespace to ensure we don't get a mismatch there
+	trimmedDateTime := stripSpaces(s)
+	trimmedLayout := stripSpaces(layout)
+
+	lowercaseDateTime := strings.ToLower(trimmedDateTime)
+	lowercaseLayout := strings.ToLower(trimmedLayout)
+
+	// This is a bit of a hack and needs tidying up TODO:
+
+	lowercaseDateTime = strings.ReplaceAll(lowercaseDateTime, "am", "")
+	lowercaseDateTime = strings.ReplaceAll(lowercaseDateTime, "pm", "")
+
+	if strings.HasSuffix(lowercaseLayout, "pm") {
+		lowercaseDateTime += "pm"
+	}
+
+	t, err := time.Parse(lowercaseLayout, lowercaseDateTime)
 	if err != nil {
+		log.Printf("date time %s \n format %s", lowercaseDateTime, lowercaseLayout)
 		return time.Time{}, fmt.Errorf("could not parse time %q", s)
 	}
 
