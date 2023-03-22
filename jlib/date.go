@@ -137,21 +137,20 @@ func parseTime(s string, picture string) (time.Time, error) {
 	layout = reMinus7.ReplaceAllString(layout, "Z$1")
 
 	var formattedTime = s
-	if layout == time.DateOnly {
+	switch layout {
+	case time.DateOnly:
 		formattedTime = formattedTime[:len(time.DateOnly)]
-	}
-
-	if layout == time.DateTime {
+	case time.DateTime:
 		formattedTime = formattedTime[:len(time.DateTime)]
-	}
-
-	// If the layout contains a time zone but the date string doesn't remove it.
-	if layout == time.RFC3339 {
+	case time.RFC3339:
+		// If the layout contains a time zone but the date string doesn't, lets remove it.
 		if !strings.Contains(formattedTime, "Z") {
 			layout = layout[:len(time.DateTime)]
 		}
 	}
 
+	// Occasionally date time strings contain a T in the string and the layout doesn't, if that's the
+	// case, lets remove it.
 	if strings.Contains(formattedTime, "T") && !strings.Contains(layout, "T") {
 		formattedTime = strings.ReplaceAll(formattedTime, "T", "")
 	} else if !strings.Contains(formattedTime, "T") && strings.Contains(layout, "T") {
@@ -162,17 +161,11 @@ func parseTime(s string, picture string) (time.Time, error) {
 	trimmedDateTime := stripSpaces(s)
 	trimmedLayout := stripSpaces(layout)
 
+	// lowercase to avoid any issues
 	lowercaseDateTime := strings.ToLower(trimmedDateTime)
 	lowercaseLayout := strings.ToLower(trimmedLayout)
 
-	// This is a bit of a hack and needs tidying up TODO:
-
-	lowercaseDateTime = strings.ReplaceAll(lowercaseDateTime, "am", "")
-	lowercaseDateTime = strings.ReplaceAll(lowercaseDateTime, "pm", "")
-
-	if strings.HasSuffix(lowercaseLayout, "pm") {
-		lowercaseDateTime += "pm"
-	}
+	lowercaseLayout = addSuffixIfNotExists(lowercaseLayout, "am", lowercaseDateTime)
 
 	t, err := time.Parse(lowercaseLayout, lowercaseDateTime)
 	if err != nil {
@@ -181,6 +174,16 @@ func parseTime(s string, picture string) (time.Time, error) {
 	}
 
 	return t, nil
+}
+
+// TODO: Tidy, for some reason sometimes the date time string has pm / am on but the format doesn't
+// if thats the case lets add it. Only seems to happen in AM?
+func addSuffixIfNotExists(s string, suffix string, target string) string {
+	if strings.HasSuffix(target, suffix) && !strings.HasSuffix(s, suffix) && !strings.HasSuffix(s, "pm") {
+		return s + suffix
+	}
+
+	return s
 }
 
 func stripSpaces(str string) string {
