@@ -150,7 +150,9 @@ func parseTime(s string, picture string) (time.Time, error) {
 	var formattedTime = dateTimeWithoutMilli
 	switch layout {
 	case time.DateOnly:
-		formattedTime = formattedTime[:len(time.DateOnly)]
+		if len(formattedTime) > len(time.DateOnly) {
+			formattedTime = formattedTime[:len(time.DateOnly)]
+		}
 	case time.RFC3339:
 		// If the layout contains a time zone but the date string doesn't, lets remove it.
 		if !strings.Contains(formattedTime, "Z") {

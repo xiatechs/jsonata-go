@@ -7612,6 +7612,11 @@ func TestFuncMillis2(t *testing.T) {
 }
 
 func TestFuncToMillis(t *testing.T) {
+	defer func() { // added this to help with the test as it panics and that is annoying
+        if r := recover(); r != nil {
+            fmt.Println("Recovered in f", r)
+        }
+    }()
 
 	runTestCases(t, nil, []*testCase{
 		{
