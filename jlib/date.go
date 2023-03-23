@@ -19,8 +19,11 @@ import (
 // 2006-01-02T15:04:05.000Z07:00
 const defaultFormatTimeLayout = "[Y]-[M01]-[D01]T[H01]:[m]:[s].[f001][Z01:01t]"
 
-const amSuffix = "am"
-const pmSuffix = "pm"
+const (
+	amSuffix = "am"
+	pmSuffix = "pm"
+	MST      = "07:00"
+)
 
 var defaultParseTimeLayouts = []string{
 	"[Y]-[M01]-[D01]T[H01]:[m]:[s][Z01:01t]",
@@ -151,13 +154,14 @@ func parseTime(s string, picture string) (time.Time, error) {
 		}
 	case time.RFC3339:
 		// If the layout contains a time zone but the date string doesn't, lets remove it.
-		// Otherwise, if the layout contains a timezone and the time string doesn't add a default.
+		// Otherwise, if the layout contains a timezone and the time string doesn't add a default
+		// The default is currently MST which is GMT -7.
 		if !strings.Contains(formattedTime, "Z") {
 			layout = layout[:len(time.DateTime)]
 		} else {
 			formattedTimeWithTimeZone := strings.Split(formattedTime, "Z")
 			if len(formattedTimeWithTimeZone) == 2 {
-				formattedTime += "07:00"
+				formattedTime += MST
 			}
 		}
 	}
