@@ -143,11 +143,7 @@ func parseTime(s string, picture string) (time.Time, error) {
 	// Replace -07:00 with Z07:00
 	layout = reMinus7.ReplaceAllString(layout, "Z$1")
 
-	// First remove the milliseconds from the date time string as it messes up our layouts
-	splitString := strings.Split(s, ".")
-	var dateTimeWithoutMilli = splitString[0]
-
-	var formattedTime = dateTimeWithoutMilli
+	var formattedTime = s
 	switch layout {
 	case time.DateOnly:
 		if len(formattedTime) > len(time.DateOnly) {
@@ -155,8 +151,14 @@ func parseTime(s string, picture string) (time.Time, error) {
 		}
 	case time.RFC3339:
 		// If the layout contains a time zone but the date string doesn't, lets remove it.
+		// Otherwise, if the layout contains a timezone and the time string doesn't add a default.
 		if !strings.Contains(formattedTime, "Z") {
 			layout = layout[:len(time.DateTime)]
+		} else {
+			formattedTimeWithTimeZone := strings.Split(formattedTime, "Z")
+			if len(formattedTimeWithTimeZone) == 2 {
+				formattedTime += "07:00"
+			}
 		}
 	}
 
