@@ -6,7 +6,6 @@ package jlib
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,17 +19,23 @@ import (
 // 2006-01-02T15:04:05.000Z07:00
 const defaultFormatTimeLayout = "[Y]-[M01]-[D01]T[H01]:[m]:[s].[f001][Z01:01t]"
 
+const amSuffix = "am"
+const pmSuffix = "pm"
+
 var defaultParseTimeLayouts = []string{
 	"[Y]-[M01]-[D01]T[H01]:[m]:[s][Z01:01t]",
 	"[Y]-[M01]-[D01]T[H01]:[m]:[s][Z0100t]",
 	"[Y]-[M01]-[D01]T[H01]:[m]:[s]",
+	"[Y0001]-[M01]-[D01]",
 	"[Y]-[M01]-[D01]",
+	"[Y0001]-[M01]-[D01] [H01]:[m01]:[s01]",
+	"[Y0001]-[M01]-[D01] [H01]:[m01]:[s01] [P]",
+	"[H01]",
 	"[Y]",
 }
 
 // FromMillis (golint)
 func FromMillis(ms int64, picture jtypes.OptionalString, tz jtypes.OptionalString) (string, error) {
-
 	t := msToTime(ms).UTC()
 
 	if tz.String != "" {
@@ -97,20 +102,22 @@ func parseTimeZone(tz string) (*time.Location, error) {
 
 // ToMillis (golint)
 func ToMillis(s string, picture jtypes.OptionalString, tz jtypes.OptionalString) (int64, error) {
+	var err error
+	var t time.Time
+
 	layouts := defaultParseTimeLayouts
 	if picture.String != "" {
 		layouts = []string{picture.String}
 	}
 
 	// TODO: How are timezones used for parsing?
-
 	for _, l := range layouts {
-		if t, err := parseTime(s, l); err == nil {
+		if t, err = parseTime(s, l); err == nil {
 			return timeToMS(t), nil
 		}
 	}
 
-	return 0, fmt.Errorf("could not parse time %q", s)
+	return 0, err
 }
 
 var reMinus7 = regexp.MustCompile("-(0*7)")
@@ -136,12 +143,14 @@ func parseTime(s string, picture string) (time.Time, error) {
 	// Replace -07:00 with Z07:00
 	layout = reMinus7.ReplaceAllString(layout, "Z$1")
 
-	var formattedTime = s
+	// First remove the milliseconds from the date time string as it messes up our layouts
+	splitString := strings.Split(s, ".")
+	var dateTimeWithoutMilli = splitString[0]
+
+	var formattedTime = dateTimeWithoutMilli
 	switch layout {
 	case time.DateOnly:
 		formattedTime = formattedTime[:len(time.DateOnly)]
-	case time.DateTime:
-		formattedTime = formattedTime[:len(time.DateTime)]
 	case time.RFC3339:
 		// If the layout contains a time zone but the date string doesn't, lets remove it.
 		if !strings.Contains(formattedTime, "Z") {
@@ -157,30 +166,32 @@ func parseTime(s string, picture string) (time.Time, error) {
 		layout = strings.ReplaceAll(layout, "T", "")
 	}
 
-	// trim whitespace to ensure we don't get a mismatch there
-	trimmedDateTime := stripSpaces(s)
-	trimmedLayout := stripSpaces(layout)
+	sanitisedLayout := strings.ToLower(stripSpaces(layout))
+	sanitisedDateTime := strings.ToLower(stripSpaces(formattedTime))
 
-	// lowercase to avoid any issues
-	lowercaseDateTime := strings.ToLower(trimmedDateTime)
-	lowercaseLayout := strings.ToLower(trimmedLayout)
+	sanitisedLayout = addSuffixIfNotExists(sanitisedLayout, sanitisedDateTime)
+	sanitisedDateTime = addSuffixIfNotExists(sanitisedDateTime, sanitisedLayout)
 
-	lowercaseLayout = addSuffixIfNotExists(lowercaseLayout, "am", lowercaseDateTime)
-
-	t, err := time.Parse(lowercaseLayout, lowercaseDateTime)
+	t, err := time.Parse(sanitisedLayout, sanitisedDateTime)
 	if err != nil {
-		log.Printf("date time %s \n format %s", lowercaseDateTime, lowercaseLayout)
-		return time.Time{}, fmt.Errorf("could not parse time %q", s)
+		return time.Time{}, fmt.Errorf(
+			"could not parse time %q due to inconsistency in layout and date time string, date %s layout %s",
+			s,
+			sanitisedDateTime,
+			sanitisedLayout,
+		)
 	}
 
 	return t, nil
 }
 
-// TODO: Tidy, for some reason sometimes the date time string has pm / am on but the format doesn't
-// if thats the case lets add it. Only seems to happen in AM?
-func addSuffixIfNotExists(s string, suffix string, target string) string {
-	if strings.HasSuffix(target, suffix) && !strings.HasSuffix(s, suffix) && !strings.HasSuffix(s, "pm") {
-		return s + suffix
+// It isn't consistent that both the date time string and format have a PM/AM suffix. If we find the suffix
+// on one of the strings, add it to the other. Sometimes we can have conflicting suffixes for example the layout
+// is always in PM 2006-01-0215:04:05pm but the actual date time string could be AM 2023-01-3110:44:59am.
+// If this is the case, just ignore it as the time will parse correctly.
+func addSuffixIfNotExists(s string, target string) string {
+	if strings.HasSuffix(target, amSuffix) && !strings.HasSuffix(s, amSuffix) && !strings.HasSuffix(s, pmSuffix) {
+		return s + amSuffix
 	}
 
 	return s
