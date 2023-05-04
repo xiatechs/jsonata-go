@@ -94,6 +94,12 @@ var baseEnv = initBaseEnv(map[string]Extension{
 		EvalContextHandler: defaultContextHandler,
 	},
 
+	"newtime": {
+		Func:               jlib.TimeFunc,
+		UndefinedHandler:   defaultUndefinedHandler,
+		EvalContextHandler: defaultContextHandler,
+	},
+
 	/*
 		EXTENDED END
 	*/
