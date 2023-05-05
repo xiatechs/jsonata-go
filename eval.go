@@ -92,9 +92,6 @@ func eval(node jparse.Node, input reflect.Value, env *environment) (reflect.Valu
 	}
 
 	if err != nil {
-		//inter := input.Interface()
-		//byts, _ := json.MarshalIndent(inter, "", " ")
-		//err = fmt.Errorf("%s | error: %b", string(byts), err)
 		return undefined, err
 	}
 

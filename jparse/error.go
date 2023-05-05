@@ -85,7 +85,7 @@ type Error struct {
 }
 
 func newError(typ ErrType, tok token) error {
-	return fmt.Errorf("%v, position %d", newErrorHint(typ, tok, ""), tok.Position)
+	return fmt.Errorf("%v, character position %d", newErrorHint(typ, tok, ""), tok.Position)
 }
 
 func newErrorHint(typ ErrType, tok token, hint string) error {
