@@ -306,6 +306,7 @@ Loop:
 // and returns a string token. The opening quote has already been
 // consumed.
 func (l *lexer) scanString(quote rune) token {
+	start := l.current
 Loop:
 	for {
 		switch l.nextRune() {
@@ -317,7 +318,7 @@ Loop:
 			}
 			fallthrough
 		case eof:
-			return l.error(ErrUnterminatedString, string(quote))
+			return l.error(ErrUnterminatedString, fmt.Sprintf("%s, starting from position %d", string(quote), start))
 		}
 	}
 
