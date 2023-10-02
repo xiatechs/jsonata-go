@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"errors"
 	"strconv"
 )
 
@@ -279,10 +280,21 @@ func setValue(obj map[string]interface{}, path string, value string, dtype strin
 }
 
 // objectsToDocument converts an array of Items to a nested map according to the Code paths.
-func ObjectsToDocument(input []map[string]interface{}) map[string]interface{} {
+func ObjectsToDocument(input interface{}) (interface{}, error) {
+	trueInput, ok := input.([]interface{})
+	if !ok {
+		// this is very xiatech specific by the way
+		return nil, errors.New("input must be an array of XDM Objects")
+	}
+
 	output := make(map[string]interface{}) // Initialize the output map
 	// Iterate through each item in the input
-	for _, item := range input {
+	for _, itemToInterface := range trueInput {
+		item, ok := itemToInterface.(map[string]interface{})
+		if !ok {
+			// do we want to just continue here?
+			continue
+		}
 		// Call setValue for each item to set the value in the output map
 		code, ok := item["Code"].(string)
 		if !ok {
@@ -298,5 +310,6 @@ func ObjectsToDocument(input []map[string]interface{}) map[string]interface{} {
 		}
 		setValue(output, code, value, dtype)
 	}
-	return output // Return the output map
+
+	return output, nil // Return the output map
 }
