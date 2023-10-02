@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strings"
 	"errors"
-	"strconv"
 )
 
 // Unescape an escaped json string into JSON (once)
@@ -233,36 +232,8 @@ func ObjMerge(i1, i2 interface{}) interface{} {
 }
 
 // setValue sets the value in the obj map at the specified dot notation path.
-// It converts the value to the specified data type (dtype) before setting it.
-func setValue(obj map[string]interface{}, path string, value string, dtype string) {
+func setValue(obj map[string]interface{}, path string, value interface{}) {
 	paths := strings.Split(path, ".") // Split the path into parts
-
-	// Initialize typedValue as empty interface
-	var typedValue interface{}
-	switch dtype {
-	case "STRING":
-		typedValue = value // Assign value as string
-	case "INT":
-		// Try to convert value to int
-		intValue, err := strconv.Atoi(value)
-		if err == nil {
-			typedValue = intValue // Assign converted int value
-		}
-	case "FLOAT", "DECIMAL":
-		// Try to convert value to float
-		floatValue, err := strconv.ParseFloat(value, 64)
-		if err == nil {
-			typedValue = floatValue // Assign converted float value
-		}
-	case "BOOL":
-		// Try to convert value to bool
-		boolValue, err := strconv.ParseBool(value)
-		if err == nil {
-			typedValue = boolValue // Assign converted bool value
-		}
-	default:
-		typedValue = value // Assign value as is if type is unrecognized
-	}
 
 	// Iterate through path parts to navigate/create nested maps
 	for i := 0; i < len(paths)-1; i++ {
@@ -276,15 +247,14 @@ func setValue(obj map[string]interface{}, path string, value string, dtype strin
 	}
 
 	// Set the value in the final nested map
-	obj[paths[len(paths)-1]] = typedValue
+	obj[paths[len(paths)-1]] = value
 }
 
 // objectsToDocument converts an array of Items to a nested map according to the Code paths.
 func ObjectsToDocument(input interface{}) (interface{}, error) {
 	trueInput, ok := input.([]interface{})
 	if !ok {
-		// this is very xiatech specific by the way
-		return nil, errors.New("input must be an array of XDM Objects")
+		return nil, errors.New("input must be an array of Objects")
 	}
 
 	output := make(map[string]interface{}) // Initialize the output map
@@ -292,7 +262,6 @@ func ObjectsToDocument(input interface{}) (interface{}, error) {
 	for _, itemToInterface := range trueInput {
 		item, ok := itemToInterface.(map[string]interface{})
 		if !ok {
-			// do we want to just continue here?
 			continue
 		}
 		// Call setValue for each item to set the value in the output map
@@ -300,15 +269,8 @@ func ObjectsToDocument(input interface{}) (interface{}, error) {
 		if !ok {
 			continue
 		}
-		value, ok := item["Value"].(string)
-		if !ok {
-			continue
-		}
-		dtype, ok := item["Type"].(string)
-		if !ok {
-			dtype = ""
-		}
-		setValue(output, code, value, dtype)
+		value := item["Value"]
+		setValue(output, code, value)
 	}
 
 	return output, nil // Return the output map
