@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"strconv"
 )
 
 // Unescape an escaped json string into JSON (once)
@@ -228,4 +229,74 @@ func ObjMerge(i1, i2 interface{}) interface{} {
 	}
 
 	return output
+}
+
+// setValue sets the value in the obj map at the specified dot notation path.
+// It converts the value to the specified data type (dtype) before setting it.
+func setValue(obj map[string]interface{}, path string, value string, dtype string) {
+	paths := strings.Split(path, ".") // Split the path into parts
+
+	// Initialize typedValue as empty interface
+	var typedValue interface{}
+	switch dtype {
+	case "STRING":
+		typedValue = value // Assign value as string
+	case "INT":
+		// Try to convert value to int
+		intValue, err := strconv.Atoi(value)
+		if err == nil {
+			typedValue = intValue // Assign converted int value
+		}
+	case "FLOAT", "DECIMAL":
+		// Try to convert value to float
+		floatValue, err := strconv.ParseFloat(value, 64)
+		if err == nil {
+			typedValue = floatValue // Assign converted float value
+		}
+	case "BOOL":
+		// Try to convert value to bool
+		boolValue, err := strconv.ParseBool(value)
+		if err == nil {
+			typedValue = boolValue // Assign converted bool value
+		}
+	default:
+		typedValue = value // Assign value as is if type is unrecognized
+	}
+
+	// Iterate through path parts to navigate/create nested maps
+	for i := 0; i < len(paths)-1; i++ {
+		// If the key does not exist, create a new map at the key
+		_, ok := obj[paths[i]]
+		if !ok {
+			obj[paths[i]] = make(map[string]interface{})
+		}
+		// Move to the next nested map
+		obj = obj[paths[i]].(map[string]interface{})
+	}
+
+	// Set the value in the final nested map
+	obj[paths[len(paths)-1]] = typedValue
+}
+
+// objectsToDocument converts an array of Items to a nested map according to the Code paths.
+func ObjectsToDocument(input []map[string]interface{}) map[string]interface{} {
+	output := make(map[string]interface{}) // Initialize the output map
+	// Iterate through each item in the input
+	for _, item := range input {
+		// Call setValue for each item to set the value in the output map
+		code, ok := item["Code"].(string)
+		if !ok {
+			continue
+		}
+		value, ok := item["Value"].(string)
+		if !ok {
+			continue
+		}
+		dtype, ok := item["Type"].(string)
+		if !ok {
+			dtype = ""
+		}
+		setValue(output, code, value, dtype)
+	}
+	return output // Return the output map
 }
