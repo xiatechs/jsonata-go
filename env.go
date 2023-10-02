@@ -14,7 +14,6 @@ import (
 	"github.com/xiatechs/jsonata-go/jlib"
 	"github.com/xiatechs/jsonata-go/jparse"
 	"github.com/xiatechs/jsonata-go/jtypes"
-
 )
 
 type environment struct {
