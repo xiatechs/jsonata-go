@@ -101,6 +101,12 @@ var baseEnv = initBaseEnv(map[string]Extension{
 		EvalContextHandler: nil,
 	},
 
+	"oneToManyJoin": {
+		Func:               jlib.OneToManyJoin,
+		UndefinedHandler:   defaultUndefinedHandler,
+		EvalContextHandler: nil,
+	},
+
 	/*
 		EXTENDED END
 	*/

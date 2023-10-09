@@ -275,3 +275,82 @@ func ObjectsToDocument(input interface{}) (interface{}, error) {
 
 	return output, nil // Return the output map
 }
+
+func mergeItems(leftItem interface{}, rightItems []interface{}, rightArrayName string) map[string]interface{} {
+	mergedItem := make(map[string]interface{})
+
+	// Check if leftItem is a map or a struct and merge accordingly
+	leftVal := reflect.ValueOf(leftItem)
+	if leftVal.Kind() == reflect.Map {
+		// Merge fields from the map
+		for _, key := range leftVal.MapKeys() {
+			mergedItem[key.String()] = leftVal.MapIndex(key).Interface()
+		}
+	} else {
+		// Merge fields from the struct
+		leftType := leftVal.Type()
+		for i := 0; i < leftVal.NumField(); i++ {
+			fieldName := leftType.Field(i).Name
+			fieldValue := leftVal.Field(i).Interface()
+			mergedItem[fieldName] = fieldValue
+		}
+	}
+
+	// If there are matching items in the right array, add them under the specified name
+	if len(rightItems) > 0 {
+		mergedItem[rightArrayName] = rightItems
+	}
+
+	return mergedItem
+}
+
+
+func OneToManyJoin(leftArr, rightArr interface{}, leftKey, rightKey, rightArrayName string) (interface{}, error) {
+	trueLeftArr, ok := leftArr.([]interface{})
+	if !ok {
+		return nil, errors.New("input must be an array of Objects")
+	}
+
+	trueRightArr, ok := rightArr.([]interface{})
+	if !ok {
+		return nil, errors.New("input must be an array of Objects")
+	}
+	
+	// Create a map for faster lookup of rightArr elements based on the key
+	rightMap := make(map[string][]interface{})
+	for _, item := range trueRightArr {
+		var val interface{}
+		// Check if leftItem is a map or a struct and get the key value accordingly
+		if reflect.TypeOf(item).Kind() == reflect.Map {
+			val = reflect.ValueOf(item).MapIndex(reflect.ValueOf(rightKey)).Interface()
+		} else {
+			val = reflect.ValueOf(item).FieldByName(rightKey).Interface()
+		}
+		// Convert the key value to a string and associate it with the item in the map
+		strVal := fmt.Sprintf("%v", val)
+		rightMap[strVal] = append(rightMap[strVal], item)
+	}
+
+	// Create a slice to store the merged results
+	var result []map[string]interface{}
+
+	// Iterate through the left array and perform the join
+	for _, leftItem := range trueLeftArr {
+		var leftVal interface{}
+		// Check if leftItem is a map or a struct and get the key value accordingly
+		if reflect.TypeOf(leftItem).Kind() == reflect.Map {
+			leftVal = reflect.ValueOf(leftItem).MapIndex(reflect.ValueOf(leftKey)).Interface()
+		} else {
+			leftVal = reflect.ValueOf(leftItem).FieldByName(leftKey).Interface()
+		}
+		// Convert the key value to a string
+		strVal := fmt.Sprintf("%v", leftVal)
+		rightItems := rightMap[strVal]
+		
+		// Merge the left and right items
+		mergedItem := mergeItems(leftItem, rightItems, rightArrayName)
+		result = append(result, mergedItem)
+	}
+
+	return result, nil
+}
