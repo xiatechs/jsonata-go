@@ -322,11 +322,12 @@ func OneToManyJoin(leftArr, rightArr interface{}, leftKey, rightKey, rightArrayN
 	for _, item := range trueRightArr {
 		var val interface{}
 		// Check if leftItem is a map or a struct and get the key value accordingly
-		if reflect.TypeOf(item).Kind() == reflect.Map {
-			val = reflect.ValueOf(item).MapIndex(reflect.ValueOf(rightKey)).Interface()
-		} else {
-			// if it's not a map, this will panic
-			// val = reflect.ValueOf(item).FieldByName(rightKey).Interface()
+		itemMap, ok := item.(map[string]interface{})
+		if ok {
+			itemKey, ok := itemMap[rightKey]
+			if ok {
+				val = itemKey
+			}
 		}
 		// Convert the key value to a string and associate it with the item in the map
 		strVal := fmt.Sprintf("%v", val)
@@ -340,11 +341,12 @@ func OneToManyJoin(leftArr, rightArr interface{}, leftKey, rightKey, rightArrayN
 	for _, leftItem := range trueLeftArr {
 		var leftVal interface{}
 		// Check if leftItem is a map or a struct and get the key value accordingly
-		if reflect.TypeOf(leftItem).Kind() == reflect.Map {
-			leftVal = reflect.ValueOf(leftItem).MapIndex(reflect.ValueOf(leftKey)).Interface()
-		} else {
-			// if it's not a map, this will panic
-			// leftVal = reflect.ValueOf(leftItem).FieldByName(leftKey).Interface()
+		itemMap, ok := leftItem.(map[string]interface{})
+		if ok {
+			itemKey, ok := itemMap[leftKey]
+			if ok {
+				leftVal = itemKey
+			}
 		}
 		// Convert the key value to a string
 		strVal := fmt.Sprintf("%v", leftVal)
