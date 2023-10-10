@@ -242,11 +242,13 @@ func setValue(obj map[string]interface{}, path string, value interface{}) {
 		if !ok {
 			obj[paths[i]] = make(map[string]interface{})
 		}
-		// Move to the next nested map
-		obj = obj[paths[i]].(map[string]interface{})
+
+		obj, ok = obj[paths[i]].(map[string]interface{})
+		if !ok {
+			continue
+		}
 	}
 
-	// Set the value in the final nested map
 	obj[paths[len(paths)-1]] = value
 }
 
@@ -254,7 +256,7 @@ func setValue(obj map[string]interface{}, path string, value interface{}) {
 func ObjectsToDocument(input interface{}) (interface{}, error) {
 	trueInput, ok := input.([]interface{})
 	if !ok {
-		return nil, errors.New("input must be an array of Objects")
+		return nil, errors.New("$objectsToDocument input must be an array of objects")
 	}
 
 	output := make(map[string]interface{}) // Initialize the output map
@@ -262,7 +264,7 @@ func ObjectsToDocument(input interface{}) (interface{}, error) {
 	for _, itemToInterface := range trueInput {
 		item, ok := itemToInterface.(map[string]interface{})
 		if !ok {
-			continue
+			return nil, errors.New("$objectsToDocument input must be an array of objects with Code and Value fields")
 		}
 		// Call setValue for each item to set the value in the output map
 		code, ok := item["Code"].(string)
