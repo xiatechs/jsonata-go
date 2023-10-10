@@ -129,6 +129,14 @@ func TestOneToManyJoin(t *testing.T) {
 			joinStr2:       "id",
 			expectedOutput: "[{\"age\":5,\"example\":[{\"id\":1,\"name\":\"Tim\"},{\"id\":1,\"name\":\"Tam\"}],\"id\":1}]",
 		},
+		{
+			description:    "one to many join - complex",
+			object1:        `[{"ID":1,"Name":"Item1"},{"ID":2,"Name":"Item2"}]`,
+			object2:        `[{"ProductID":"1","Price":19.99},{"ProductID":"1","Price":29.99},{"ProductID":"2","Price":39.99}]`,
+			joinStr1:       "ID",
+			joinStr2:       "ProductID",
+			expectedOutput: "[{\"ID\":1,\"Name\":\"Item1\",\"example\":[{\"Price\":19.99,\"ProductID\":\"1\"},{\"Price\":29.99,\"ProductID\":\"1\"}]},{\"ID\":2,\"Name\":\"Item2\",\"example\":[{\"Price\":39.99,\"ProductID\":\"2\"}]}]",
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
