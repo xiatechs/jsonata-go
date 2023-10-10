@@ -2,10 +2,10 @@ package jlib
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
-	"errors"
 )
 
 // Unescape an escaped json string into JSON (once)
@@ -304,18 +304,17 @@ func mergeItems(leftItem interface{}, rightItems []interface{}, rightArrayName s
 	return mergedItem
 }
 
-
 func OneToManyJoin(leftArr, rightArr interface{}, leftKey, rightKey, rightArrayName string) (interface{}, error) {
 	trueLeftArr, ok := leftArr.([]interface{})
 	if !ok {
-		return nil, errors.New("input must be an array of Objects")
+		return nil, errors.New("left input must be an array of Objects")
 	}
 
 	trueRightArr, ok := rightArr.([]interface{})
 	if !ok {
-		return nil, errors.New("input must be an array of Objects")
+		return nil, errors.New("right input must be an array of Objects")
 	}
-	
+
 	// Create a map for faster lookup of rightArr elements based on the key
 	rightMap := make(map[string][]interface{})
 	for _, item := range trueRightArr {
@@ -324,7 +323,8 @@ func OneToManyJoin(leftArr, rightArr interface{}, leftKey, rightKey, rightArrayN
 		if reflect.TypeOf(item).Kind() == reflect.Map {
 			val = reflect.ValueOf(item).MapIndex(reflect.ValueOf(rightKey)).Interface()
 		} else {
-			val = reflect.ValueOf(item).FieldByName(rightKey).Interface()
+			// if it's not a map, this will panic
+			// val = reflect.ValueOf(item).FieldByName(rightKey).Interface()
 		}
 		// Convert the key value to a string and associate it with the item in the map
 		strVal := fmt.Sprintf("%v", val)
@@ -341,12 +341,13 @@ func OneToManyJoin(leftArr, rightArr interface{}, leftKey, rightKey, rightArrayN
 		if reflect.TypeOf(leftItem).Kind() == reflect.Map {
 			leftVal = reflect.ValueOf(leftItem).MapIndex(reflect.ValueOf(leftKey)).Interface()
 		} else {
-			leftVal = reflect.ValueOf(leftItem).FieldByName(leftKey).Interface()
+			// if it's not a map, this will panic
+			// leftVal = reflect.ValueOf(leftItem).FieldByName(leftKey).Interface()
 		}
 		// Convert the key value to a string
 		strVal := fmt.Sprintf("%v", leftVal)
 		rightItems := rightMap[strVal]
-		
+
 		// Merge the left and right items
 		mergedItem := mergeItems(leftItem, rightItems, rightArrayName)
 		result = append(result, mergedItem)
