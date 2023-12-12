@@ -1,7 +1,7 @@
 package jlib
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
