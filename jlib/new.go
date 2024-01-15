@@ -1,11 +1,12 @@
 package jlib
 
 import (
-	"github.com/goccy/go-json"
 	"errors"
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/goccy/go-json"
 )
 
 // Unescape an escaped json string into JSON (once)

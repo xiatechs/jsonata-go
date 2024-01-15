@@ -5,7 +5,6 @@
 package jsonata
 
 import (
-	"github.com/goccy/go-json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -18,6 +17,8 @@ import (
 	"testing"
 	"time"
 	"unicode/utf8"
+
+	"github.com/goccy/go-json"
 
 	"github.com/stretchr/testify/assert"
 

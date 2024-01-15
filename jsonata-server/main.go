@@ -6,13 +6,14 @@ package main
 
 import (
 	"bytes"
-	"github.com/goccy/go-json"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"strings"
+
+	"github.com/goccy/go-json"
 
 	jsonata "github.com/xiatechs/jsonata-go"
 	"github.com/xiatechs/jsonata-go/jtypes"

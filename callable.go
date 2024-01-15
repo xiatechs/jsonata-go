@@ -5,12 +5,13 @@
 package jsonata
 
 import (
-	"github.com/goccy/go-json"
 	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/goccy/go-json"
 
 	"github.com/xiatechs/jsonata-go/jlib"
 	"github.com/xiatechs/jsonata-go/jparse"

@@ -5,9 +5,10 @@
 package jsonata_test
 
 import (
-	"github.com/goccy/go-json"
 	"fmt"
 	"log"
+
+	"github.com/goccy/go-json"
 
 	jsonata "github.com/xiatechs/jsonata-go"
 )

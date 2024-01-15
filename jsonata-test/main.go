@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/goccy/go-json"
 	"flag"
 	"fmt"
 	"io"
@@ -11,6 +10,8 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/goccy/go-json"
 
 	jsonata "github.com/xiatechs/jsonata-go"
 	types "github.com/xiatechs/jsonata-go/jtypes"

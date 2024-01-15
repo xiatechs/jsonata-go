@@ -1,9 +1,10 @@
 package join
 
 import (
-	"github.com/goccy/go-json"
 	"log"
 	"testing"
+
+	"github.com/goccy/go-json"
 
 	"github.com/stretchr/testify/assert"
 )

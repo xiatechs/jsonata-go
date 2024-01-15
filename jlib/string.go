@@ -7,7 +7,6 @@ package jlib
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/goccy/go-json"
 	"fmt"
 	"math"
 	"net/url"
@@ -16,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/goccy/go-json"
 
 	"github.com/xiatechs/jsonata-go/jlib/jxpath"
 	"github.com/xiatechs/jsonata-go/jtypes"

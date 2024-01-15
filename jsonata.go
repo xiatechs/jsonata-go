@@ -158,6 +158,12 @@ func (e *Expr) Eval(data interface{}) (interface{}, error) {
 		return nil, nil
 	}
 
+	i := result.Interface()
+
+	if mapI, ok := i.(map[string]interface{}); ok {
+		i = sortMap(mapI)
+	}
+
 	return result.Interface(), nil
 }
 
