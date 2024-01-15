@@ -100,7 +100,7 @@ func eval(input, expression string) (b []byte, status int, err error) {
 	}
 
 	// Evaluate the JSONata expression.
-	result, err := expr.Eval(data)
+	result, err := expr.EvalSorted(data)
 	if err != nil {
 		if err == jsonata.ErrUndefined {
 			// Don't treat not finding any results as an error.

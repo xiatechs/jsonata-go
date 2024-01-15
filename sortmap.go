@@ -1,13 +1,14 @@
 package jsonata
 
 import (
+	"errors"
 	"reflect"
 	"sort"
 )
 
-type visitedMap map[interface{}]bool
+type visitedMap map[uintptr]bool
 
-func makeDeterministic(input interface{}, visited visitedMap) interface{} {
+func makeDeterministic(input interface{}, visited visitedMap) (interface{}, error) {
 	if visited == nil {
 		visited = make(visitedMap)
 	}
@@ -20,9 +21,7 @@ func makeDeterministic(input interface{}, visited visitedMap) interface{} {
 	switch value.Kind() {
 	case reflect.Map:
 		if visited[value.Pointer()] {
-			// here we kill circular dependencies i.e they don't appear in the JSON
-			// but is this how we want to handle this? do we want to return an error
-			return nil
+			return nil, errors.New("circular dependency detected in output - please investigate")
 		}
 		visited[value.Pointer()] = true
 
@@ -30,11 +29,11 @@ func makeDeterministic(input interface{}, visited visitedMap) interface{} {
 	case reflect.Slice:
 		return makeDeterministicArray(value, visited)
 	default:
-		return input
+		return input, nil
 	}
 }
 
-func makeDeterministicMap(input reflect.Value, visited visitedMap) map[string]interface{} {
+func makeDeterministicMap(input reflect.Value, visited visitedMap) (map[string]interface{}, error) {
 	keys := make([]string, 0, input.Len())
 	for _, key := range input.MapKeys() {
 		keys = append(keys, key.String())
@@ -43,20 +42,28 @@ func makeDeterministicMap(input reflect.Value, visited visitedMap) map[string]in
 
 	deterministicMap := make(map[string]interface{})
 	for _, key := range keys {
-		value := makeDeterministic(input.MapIndex(reflect.ValueOf(key)).Interface(), visited)
+		value, err := makeDeterministic(input.MapIndex(reflect.ValueOf(key)).Interface(), visited)
+		if err != nil {
+			return nil, err
+		}
+
 		if value != nil {
 			deterministicMap[key] = value
 		}
 	}
 
-	return deterministicMap
+	return deterministicMap, nil
 }
 
-func makeDeterministicArray(input reflect.Value, visited visitedMap) []interface{} {
+func makeDeterministicArray(input reflect.Value, visited visitedMap) ([]interface{}, error) {
 	deterministicArray := make([]interface{}, input.Len())
+	var err error
 	for i := 0; i < input.Len(); i++ {
-		deterministicArray[i] = makeDeterministic(input.Index(i).Interface(), visited)
+		deterministicArray[i], err = makeDeterministic(input.Index(i).Interface(), visited)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return deterministicArray
+	return deterministicArray, nil
 }

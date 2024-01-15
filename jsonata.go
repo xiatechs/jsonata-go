@@ -188,7 +188,7 @@ func (e *Expr) EvalSorted(data interface{}) (interface{}, error) {
 	i := result.Interface()
 
 	if mapI, ok := i.(map[string]interface{}); ok {
-		i = makeDeterministic(mapI, nil)
+		return makeDeterministic(mapI, nil)
 	}
 
 	return i, nil
