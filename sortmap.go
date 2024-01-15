@@ -1,50 +1,62 @@
 package jsonata
 
 import (
+	"reflect"
 	"sort"
 )
 
-func sortMap(inputMap map[string]interface{}) map[string]interface{} {
-	sortedMap := make(map[string]interface{})
+type visitedMap map[interface{}]bool
 
-	// Extract and sort keys
-	keys := make([]string, 0, len(inputMap))
-	for key := range inputMap {
-		keys = append(keys, key)
+func makeDeterministic(input interface{}, visited visitedMap) interface{} {
+	if visited == nil {
+		visited = make(visitedMap)
+	}
+
+	value := reflect.ValueOf(input)
+	if value.Kind() == reflect.Ptr {
+		value = value.Elem()
+	}
+
+	switch value.Kind() {
+	case reflect.Map:
+		if visited[value.Pointer()] {
+			// here we kill circular dependencies i.e they don't appear in the JSON
+			// but is this how we want to handle this? do we want to return an error
+			return nil
+		}
+		visited[value.Pointer()] = true
+
+		return makeDeterministicMap(value, visited)
+	case reflect.Slice:
+		return makeDeterministicArray(value, visited)
+	default:
+		return input
+	}
+}
+
+func makeDeterministicMap(input reflect.Value, visited visitedMap) map[string]interface{} {
+	keys := make([]string, 0, input.Len())
+	for _, key := range input.MapKeys() {
+		keys = append(keys, key.String())
 	}
 	sort.Strings(keys)
 
-	// Recursively sort nested maps and arrays
+	deterministicMap := make(map[string]interface{})
 	for _, key := range keys {
-		value := inputMap[key]
-
-		switch typedValue := value.(type) {
-		case map[string]interface{}:
-			sortedMap[key] = sortMap(typedValue)
-		case []interface{}:
-			sortedMap[key] = sortArray(typedValue)
-		default:
-			sortedMap[key] = value
+		value := makeDeterministic(input.MapIndex(reflect.ValueOf(key)).Interface(), visited)
+		if value != nil {
+			deterministicMap[key] = value
 		}
 	}
 
-	return sortedMap
+	return deterministicMap
 }
 
-func sortArray(inputArray []interface{}) []interface{} {
-	sortedArray := make([]interface{}, len(inputArray))
-
-	// Recursively sort elements of the array
-	for i, element := range inputArray {
-		switch typedElement := element.(type) {
-		case map[string]interface{}:
-			sortedArray[i] = sortMap(typedElement)
-		case []interface{}:
-			sortedArray[i] = sortArray(typedElement)
-		default:
-			sortedArray[i] = element
-		}
+func makeDeterministicArray(input reflect.Value, visited visitedMap) []interface{} {
+	deterministicArray := make([]interface{}, input.Len())
+	for i := 0; i < input.Len(); i++ {
+		deterministicArray[i] = makeDeterministic(input.Index(i).Interface(), visited)
 	}
 
-	return sortedArray
+	return deterministicArray
 }

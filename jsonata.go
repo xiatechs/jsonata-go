@@ -158,13 +158,40 @@ func (e *Expr) Eval(data interface{}) (interface{}, error) {
 		return nil, nil
 	}
 
+	return result.Interface(), nil
+}
+
+// EvalSorted is Eval but for sorted data
+func (e *Expr) EvalSorted(data interface{}) (interface{}, error) {
+	input, ok := data.(reflect.Value)
+	if !ok {
+		input = reflect.ValueOf(data)
+	}
+
+	result, err := eval(e.node, input, e.newEnv(input))
+	if err != nil {
+		return nil, err
+	}
+
+	if !result.IsValid() {
+		return nil, ErrUndefined
+	}
+
+	if !result.CanInterface() {
+		return nil, fmt.Errorf("Eval returned a non-interface value")
+	}
+
+	if result.Kind() == reflect.Ptr && result.IsNil() {
+		return nil, nil
+	}
+
 	i := result.Interface()
 
 	if mapI, ok := i.(map[string]interface{}); ok {
-		i = sortMap(mapI)
+		i = makeDeterministic(mapI, nil)
 	}
 
-	return result.Interface(), nil
+	return i, nil
 }
 
 // EvalBytes is like Eval but it accepts and returns byte slices
@@ -179,6 +206,24 @@ func (e *Expr) EvalBytes(data []byte) ([]byte, error) {
 	}
 
 	v, err = e.Eval(v)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(v)
+}
+
+// EvalBytesSorted - EvalBytes but data is sorted
+func (e *Expr) EvalBytesSorted(data []byte) ([]byte, error) {
+
+	var v interface{}
+
+	err := json.Unmarshal(data, &v)
+	if err != nil {
+		return nil, err
+	}
+
+	v, err = e.EvalSorted(v)
 	if err != nil {
 		return nil, err
 	}
