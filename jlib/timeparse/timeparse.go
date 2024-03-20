@@ -141,11 +141,6 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 func getWeekOfYearString(date time.Time) (int, error) {
 	_, week := date.ISOWeek()
 
-	//firstWednesday := date.AddDate(0, 0, -int(date.Weekday())+1)
-	//if firstWednesday.Weekday() != time.Wednesday {
-	//	firstWednesday = firstWednesday.AddDate(0, 0, 7-int(firstWednesday.Weekday())+int(time.Wednesday))
-	//}
-
 	if date.Weekday() == time.Sunday {
 		week--
 	}
