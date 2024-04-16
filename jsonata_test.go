@@ -8028,6 +8028,28 @@ func TestTransform(t *testing.T) {
 	})
 }
 
+func TestUnhashableDistinct(t *testing.T) {
+	runTestCases(t, testdata.address, []*testCase{
+		{
+			Expression: `$distinct([["a", "b"]])`,
+			Output: []interface{}{
+				[]interface{}{
+					"a",
+					"b",
+				},
+			},
+		},
+		{
+			Expression: `$distinct([{"a": "b"}])`,
+			Output: []interface{}{
+				map[string]interface{}{
+					"a": "b",
+				},
+			},
+		},
+	})
+}
+
 // Helper functions
 
 type compareFunc func(interface{}, interface{}) bool
