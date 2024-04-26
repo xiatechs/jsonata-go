@@ -38,6 +38,7 @@ type DateDim struct {
 // TimeDateDimensions generates a JSON object dependent on input source timestamp, input source format and input source timezone
 // using golang time formats
 func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz string) (*DateDim, error) {
+	// first we create a time location based on the input source timezone location
 	inputLocation, err := time.LoadLocation(inputSrcTz)
 	if err != nil {
 		return nil, err
@@ -50,23 +51,29 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 		return nil, err
 	}
 
+	// then we create a time location based on the output timezone location
 	outputLocation, err := time.LoadLocation(requiredTz)
 	if err != nil {
 		return nil, err
 	}
 
+	// here we translate te input time into a local time based on the output location
 	localTime := inputTime.In(outputLocation)
 
 	// convert the parsed time into a UTC time for UTC calculations
 	utcTime := localTime.UTC()
 
-	// UTC TIME values
+	// now we have inputTime (the time parsed from the input location)
+	// the local time which is the inputTime converted to the output location
+	// and the UTC time which is the local time converted into UTC time
 
+	// UTC TIME values
 	utcAsYearMonthDay := utcTime.Format("2006-01-02")
 
 	// Input time stamp TIME values (we confirmed there need to be a seperate set of UTC values)
 	dateID := localTime.Format("20060102")
 
+	// here we get the year and week for golang standard library ISOWEEK for the local time
 	year, week := localTime.ISOWeek()
 
 	yearDay, err := strconv.Atoi(localTime.Format("2006") + localTime.Format("002"))
@@ -76,26 +83,31 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 
 	hourKeyStr := localTime.Format("2006010215")
 
-//	mondayWeek, err := getWeekOfYearString(localTime)
-//	if err != nil {
-//		return nil, err
-//	}
+	// here we get the WEEK(MONDAY) 0-53 time from localtime
+	yearMondayWeek, err := WeekNumberZeroBasedImproved(localTime)
+	if err != nil {
+		return nil, err
+	}
 
+	// the ISO yearweek
 	yearIsoWeekInt, err := strconv.Atoi(fmt.Sprintf("%d%02d", year, week))
 	if err != nil {
 		return nil, err
 	}
 
+	// year month
 	yearMonthInt, err := strconv.Atoi(localTime.Format("200601"))
 	if err != nil {
 		return nil, err
 	}
 
+	// the date key
 	dateKeyInt, err := strconv.Atoi(dateID)
 	if err != nil {
 		return nil, err
 	}
 
+	// hack - golang time library doesn't handle millis correct unless you do the below
 	dateTimeID := localTime.Format("20060102150405.000")
 
 	dateTimeID = strings.ReplaceAll(dateTimeID, ".", "")
@@ -105,6 +117,7 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 		return nil, err
 	}
 
+	// the hours
 	hourKeyInt, err := strconv.Atoi(hourKeyStr)
 	if err != nil {
 		return nil, err
@@ -116,7 +129,7 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 	dateDim := &DateDim{
 		RawValue:       inputSrcTs,
 		TimeZoneOffset: offsetStr,
-		YearWeek:       yearIsoWeekInt,
+		YearWeek:       yearMondayWeek,
 		YearDay:        yearDay,
 		YearIsoWeek:    yearIsoWeekInt,
 		YearMonth:      yearMonthInt,
@@ -138,32 +151,34 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 	return dateDim, nil
 }
 
-/*
-// getWeekOfYearString takes a time.Time object and returns the week number of the year.
-// Weeks start on Monday. Any days before the first Monday of the year are considered week 0.
-func getWeekOfYearString(t time.Time) (int, error) {
-	// Start of the year
-	yearStart := time.Date(t.Year(), time.January, 1, 0, 0, 0, 0, t.Location())
+// WeekNumberZeroBasedImproved calculates the week number of the year for the given date
+// considering weeks starting from Monday and numbering from 0.
+func WeekNumberZeroBasedImproved(t time.Time) (int, error) {
+	startOfYear := time.Date(t.Year(), 1, 1, 0, 0, 0, 0, t.Location())
+	firstDayOfYear := startOfYear.Weekday()
 
-	// Find the first Monday of the year
-	firstMonday := yearStart
-	for firstMonday.Weekday() != time.Monday {
-		firstMonday = firstMonday.AddDate(0, 0, 1)
+	offset := (int(firstDayOfYear) + 6) % 7
+
+	yearDay := t.YearDay()
+	week := (yearDay - 1 - offset) / 7
+	year := 0
+
+	if week < 0 {
+		dec31LastYear := time.Date(t.Year()-1, 12, 31, 0, 0, 0, 0, t.Location())
+		return WeekNumberZeroBasedImproved(dec31LastYear)
 	}
 
-	// If the date is before the first Monday, it's week 0
-	if t.Before(firstMonday) {
-		return strconv.Atoi(fmt.Sprintf("%04d%02d", t.Year(), 0))
+	if t.Month() == time.December && week >= 52 {
+		jan1NextYear := time.Date(t.Year()+1, 1, 1, 0, 0, 0, 0, t.Location())
+		if jan1NextYear.Weekday() <= time.Thursday {
+			if yearDay+int(time.Thursday-jan1NextYear.Weekday()) > 365+(time.Date(t.Year(), 2, 29, 0, 0, 0, 0, t.Location()).YearDay()/366) {
+				year++
+				week = 0
+				return strconv.Atoi(fmt.Sprintf("%04d%02d", year, week))
+			}
+		}
 	}
 
-	// Calculate the ISO week number
-	_, week := t.ISOWeek()
-
-	// Adjust week number if the year start week is not 1
-	if firstMonday.Day() > 1 {
-		week--
-	}
-
-	return strconv.Atoi(fmt.Sprintf("%04d%02d", t.Year(), week))
+	year = t.Year()
+	return strconv.Atoi(fmt.Sprintf("%04d%02d", year, week))
 }
-*/
