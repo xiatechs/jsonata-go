@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	strtime "github.com/ncruces/go-strftime"
 )
 
 // DateDim is the date dimension object returned from the timeparse function
@@ -38,6 +40,7 @@ type DateDim struct {
 // TimeDateDimensions generates a JSON object dependent on input source timestamp, input source format and input source timezone
 // using golang time formats
 func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz string) (*DateDim, error) {
+	// first we create a time location based on the input source timezone location
 	inputLocation, err := time.LoadLocation(inputSrcTz)
 	if err != nil {
 		return nil, err
@@ -50,23 +53,29 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 		return nil, err
 	}
 
+	// then we create a time location based on the output timezone location
 	outputLocation, err := time.LoadLocation(requiredTz)
 	if err != nil {
 		return nil, err
 	}
 
+	// here we translate te input time into a local time based on the output location
 	localTime := inputTime.In(outputLocation)
 
 	// convert the parsed time into a UTC time for UTC calculations
 	utcTime := localTime.UTC()
 
-	// UTC TIME values
+	// now we have inputTime (the time parsed from the input location)
+	// the local time which is the inputTime converted to the output location
+	// and the UTC time which is the local time converted into UTC time
 
+	// UTC TIME values
 	utcAsYearMonthDay := utcTime.Format("2006-01-02")
 
 	// Input time stamp TIME values (we confirmed there need to be a seperate set of UTC values)
 	dateID := localTime.Format("20060102")
 
+	// here we get the year and week for golang standard library ISOWEEK for the local time
 	year, week := localTime.ISOWeek()
 
 	yearDay, err := strconv.Atoi(localTime.Format("2006") + localTime.Format("002"))
@@ -76,26 +85,30 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 
 	hourKeyStr := localTime.Format("2006010215")
 
-	mondayWeek, err := getWeekOfYearString(localTime)
+	yearMondayWeek, err := strconv.Atoi(strtime.Format(`%Y%W`, localTime))
 	if err != nil {
 		return nil, err
 	}
 
+	// the ISO yearweek
 	yearIsoWeekInt, err := strconv.Atoi(fmt.Sprintf("%d%02d", year, week))
 	if err != nil {
 		return nil, err
 	}
 
+	// year month
 	yearMonthInt, err := strconv.Atoi(localTime.Format("200601"))
 	if err != nil {
 		return nil, err
 	}
 
+	// the date key
 	dateKeyInt, err := strconv.Atoi(dateID)
 	if err != nil {
 		return nil, err
 	}
 
+	// hack - golang time library doesn't handle millis correct unless you do the below
 	dateTimeID := localTime.Format("20060102150405.000")
 
 	dateTimeID = strings.ReplaceAll(dateTimeID, ".", "")
@@ -105,6 +118,7 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 		return nil, err
 	}
 
+	// the hours
 	hourKeyInt, err := strconv.Atoi(hourKeyStr)
 	if err != nil {
 		return nil, err
@@ -116,7 +130,7 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 	dateDim := &DateDim{
 		RawValue:       inputSrcTs,
 		TimeZoneOffset: offsetStr,
-		YearWeek:       mondayWeek,
+		YearWeek:       yearMondayWeek,
 		YearDay:        yearDay,
 		YearIsoWeek:    yearIsoWeekInt,
 		YearMonth:      yearMonthInt,
@@ -136,14 +150,4 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 	}
 
 	return dateDim, nil
-}
-
-func getWeekOfYearString(date time.Time) (int, error) {
-	_, week := date.ISOWeek()
-
-	if date.Weekday() == time.Sunday {
-		week--
-	}
-
-	return strconv.Atoi(fmt.Sprintf("%04d%02d", date.Year(), week))
 }
