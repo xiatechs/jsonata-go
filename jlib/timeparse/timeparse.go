@@ -85,7 +85,10 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 
 	hourKeyStr := localTime.Format("2006010215")
 
-	yearMondayWeek, _:= strconv.Atoi(strtime.Format(`%Y%W`, localTime))
+	yearMondayWeek, err := strconv.Atoi(strtime.Format(`%Y%W`, localTime))
+	if err != nil {
+		return nil, err
+	}
 
 	// the ISO yearweek
 	yearIsoWeekInt, err := strconv.Atoi(fmt.Sprintf("%d%02d", year, week))
