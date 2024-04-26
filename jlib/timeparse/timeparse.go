@@ -138,12 +138,30 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 	return dateDim, nil
 }
 
-func getWeekOfYearString(date time.Time) (int, error) {
-	_, week := date.ISOWeek()
+// getWeekOfYearString takes a time.Time object and returns the week number of the year.
+// Weeks start on Monday. Any days before the first Monday of the year are considered week 0.
+func getWeekOfYearString(t time.Time) (int, error) {
+	// Start of the year
+	yearStart := time.Date(t.Year(), time.January, 1, 0, 0, 0, 0, t.Location())
 
-	if date.Weekday() == time.Sunday {
+	// Find the first Monday of the year
+	firstMonday := yearStart
+	for firstMonday.Weekday() != time.Monday {
+		firstMonday = firstMonday.AddDate(0, 0, 1)
+	}
+
+	// If the date is before the first Monday, it's week 0
+	if t.Before(firstMonday) {
+		return strconv.Atoi(fmt.Sprintf("%04d%02d", t.Year(), 0))
+	}
+
+	// Calculate the ISO week number
+	_, week := t.ISOWeek()
+
+	// Adjust week number if the year start week is not 1
+	if firstMonday.Day() > 1 {
 		week--
 	}
 
-	return strconv.Atoi(fmt.Sprintf("%04d%02d", date.Year(), week))
+	return strconv.Atoi(fmt.Sprintf("%04d%02d", t.Year(), week))
 }
