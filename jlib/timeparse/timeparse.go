@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	strtime "github.com/ncruces/go-strftime"
 )
 
 // DateDim is the date dimension object returned from the timeparse function
@@ -83,11 +85,7 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 
 	hourKeyStr := localTime.Format("2006010215")
 
-	// here we get the WEEK(MONDAY) 0-53 time from localtime
-	yearMondayWeek, err := WeekNumberZeroBasedImproved(localTime)
-	if err != nil {
-		return nil, err
-	}
+	yearMondayWeek, _:= strconv.Atoi(strtime.Format(`%Y%W`, localTime))
 
 	// the ISO yearweek
 	yearIsoWeekInt, err := strconv.Atoi(fmt.Sprintf("%d%02d", year, week))
