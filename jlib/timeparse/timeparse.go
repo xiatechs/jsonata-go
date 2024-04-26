@@ -151,35 +151,3 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 
 	return dateDim, nil
 }
-
-// WeekNumberZeroBasedImproved calculates the week number of the year for the given date
-// considering weeks starting from Monday and numbering from 0.
-func WeekNumberZeroBasedImproved(t time.Time) (int, error) {
-	startOfYear := time.Date(t.Year(), 1, 1, 0, 0, 0, 0, t.Location())
-	firstDayOfYear := startOfYear.Weekday()
-
-	offset := (int(firstDayOfYear) + 6) % 7
-
-	yearDay := t.YearDay()
-	week := (yearDay - 1 - offset) / 7
-	year := 0
-
-	if week < 0 {
-		dec31LastYear := time.Date(t.Year()-1, 12, 31, 0, 0, 0, 0, t.Location())
-		return WeekNumberZeroBasedImproved(dec31LastYear)
-	}
-
-	if t.Month() == time.December && week >= 52 {
-		jan1NextYear := time.Date(t.Year()+1, 1, 1, 0, 0, 0, 0, t.Location())
-		if jan1NextYear.Weekday() <= time.Thursday {
-			if yearDay+int(time.Thursday-jan1NextYear.Weekday()) > 365+(time.Date(t.Year(), 2, 29, 0, 0, 0, 0, t.Location()).YearDay()/366) {
-				year++
-				week = 0
-				return strconv.Atoi(fmt.Sprintf("%04d%02d", year, week))
-			}
-		}
-	}
-
-	year = t.Year()
-	return strconv.Atoi(fmt.Sprintf("%04d%02d", year, week))
-}
