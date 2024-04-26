@@ -76,10 +76,10 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 
 	hourKeyStr := localTime.Format("2006010215")
 
-	mondayWeek, err := getWeekOfYearString(localTime)
-	if err != nil {
-		return nil, err
-	}
+//	mondayWeek, err := getWeekOfYearString(localTime)
+//	if err != nil {
+//		return nil, err
+//	}
 
 	yearIsoWeekInt, err := strconv.Atoi(fmt.Sprintf("%d%02d", year, week))
 	if err != nil {
@@ -116,7 +116,7 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 	dateDim := &DateDim{
 		RawValue:       inputSrcTs,
 		TimeZoneOffset: offsetStr,
-		YearWeek:       mondayWeek,
+		YearWeek:       yearIsoWeekInt,
 		YearDay:        yearDay,
 		YearIsoWeek:    yearIsoWeekInt,
 		YearMonth:      yearMonthInt,
@@ -138,6 +138,7 @@ func TimeDateDimensions(inputSrcTs, inputSrcFormat, inputSrcTz, requiredTz strin
 	return dateDim, nil
 }
 
+/*
 // getWeekOfYearString takes a time.Time object and returns the week number of the year.
 // Weeks start on Monday. Any days before the first Monday of the year are considered week 0.
 func getWeekOfYearString(t time.Time) (int, error) {
@@ -165,3 +166,4 @@ func getWeekOfYearString(t time.Time) (int, error) {
 
 	return strconv.Atoi(fmt.Sprintf("%04d%02d", t.Year(), week))
 }
+*/
