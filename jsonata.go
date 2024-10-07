@@ -463,7 +463,7 @@ func isDigit(r rune) bool {
 */
 
 var (
-	reQuotedPath      = regexp.MustCompile(`([A-Za-z\$\\*\` + "`" + `])\.[\"']([\s\S]+?)[\"']`)
+	reQuotedPath      = regexp.MustCompile(`([\"'\]\$\\*\x60 + "\x60" + \x60])\.[\"']([A-Za-z\s\d_-]+?)[\"']`)
 	reQuotedPathStart = regexp.MustCompile(`^[\"']([ \.0-9A-Za-z]+?)[\"']\.([A-Za-z\$\*\"\'])`)
 	commentsPath      = regexp.MustCompile(`\/\*([\s\S]*?)\*\/`)
 )
