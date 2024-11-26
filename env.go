@@ -72,6 +72,12 @@ var baseEnv = initBaseEnv(map[string]Extension{
 	/*
 		EXTENDED START
 	*/
+	"parseInt": {
+		Func: jlib.ParseInt,
+		UndefinedHandler: defaultContextHandler,
+		EvalContextHandler: nil,
+	},
+
 	"objmerge": {
 		Func:               jlib.ObjMerge,
 		UndefinedHandler:   defaultUndefinedHandler,

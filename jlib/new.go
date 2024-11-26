@@ -1,12 +1,19 @@
 package jlib
 
 import (
-	"github.com/goccy/go-json"
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
+
+	"github.com/goccy/go-json"
 )
+
+// ParseInt - parse an integer type string
+func ParseInt(input string, base, bitSize int) (interface{}, error) {
+	return strconv.ParseInt(input, base, bitSize) 
+}
 
 // Unescape an escaped json string into JSON (once)
 func Unescape(input string) (interface{}, error) {
