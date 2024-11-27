@@ -1,11 +1,13 @@
 package jlib
 
 import (
-	"github.com/goccy/go-json"
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
+
+	"github.com/goccy/go-json"
 )
 
 // Unescape an escaped json string into JSON (once)
@@ -231,25 +233,83 @@ func ObjMerge(i1, i2 interface{}) interface{} {
 	return output
 }
 
-// setValue sets the value in the obj map at the specified dot notation path.
+// setValue handles setting values in a nested structure including array indices
 func setValue(obj map[string]interface{}, path string, value interface{}) {
-	paths := strings.Split(path, ".") // Split the path into parts
+	parts := strings.Split(path, ".")
+	current := obj
 
-	// Iterate through path parts to navigate/create nested maps
-	for i := 0; i < len(paths)-1; i++ {
-		// If the key does not exist, create a new map at the key
-		_, ok := obj[paths[i]]
-		if !ok {
-			obj[paths[i]] = make(map[string]interface{})
+	for i := 0; i < len(parts)-1; i++ {
+		part := parts[i]
+
+		// Check if this part contains an array index
+		arrayIndex := -1
+		if idx := strings.Index(part, "["); idx != -1 {
+			// Extract the array index
+			if end := strings.Index(part, "]"); end != -1 {
+				indexStr := part[idx+1 : end]
+				if index, err := strconv.Atoi(indexStr); err == nil {
+					arrayIndex = index
+					part = part[:idx] // Remove the array notation from the part
+				}
+			}
 		}
 
-		obj, ok = obj[paths[i]].(map[string]interface{})
-		if !ok {
-			continue
+		// Handle array index if present
+		if arrayIndex != -1 {
+			// Ensure the current part exists and is an array
+			arr, exists := current[part].([]interface{})
+			if !exists {
+				arr = make([]interface{}, 0)
+				current[part] = arr
+			}
+
+			// Extend array if needed
+			for len(arr) <= arrayIndex {
+				arr = append(arr, make(map[string]interface{}))
+			}
+			current[part] = arr // Important: update the array in the map
+
+			// Get or create map at array index
+			if arr[arrayIndex] == nil {
+				arr[arrayIndex] = make(map[string]interface{})
+			}
+
+			current = arr[arrayIndex].(map[string]interface{})
+		} else {
+			// Normal object property
+			next, exists := current[part].(map[string]interface{})
+			if !exists {
+				next = make(map[string]interface{})
+				current[part] = next
+			}
+			current = next
 		}
 	}
 
-	obj[paths[len(paths)-1]] = value
+	// Handle the final part
+	lastPart := parts[len(parts)-1]
+	if idx := strings.Index(lastPart, "["); idx != -1 {
+		// Handle array index in the final part
+		if end := strings.Index(lastPart, "]"); end != -1 {
+			indexStr := lastPart[idx+1 : end]
+			if index, err := strconv.Atoi(indexStr); err == nil {
+				part := lastPart[:idx]
+				arr, exists := current[part].([]interface{})
+				if !exists {
+					arr = make([]interface{}, 0)
+				}
+				// Extend array if needed
+				for len(arr) <= index {
+					arr = append(arr, nil)
+				}
+				arr[index] = value
+				current[part] = arr // Important: update the array in the map
+				return
+			}
+		}
+	}
+	// Set value for non-array final part
+	current[lastPart] = value
 }
 
 // objectsToDocument converts an array of Items to a nested map according to the Code paths.
@@ -259,23 +319,32 @@ func ObjectsToDocument(input interface{}) (interface{}, error) {
 		return nil, errors.New("$objectsToDocument input must be an array of objects")
 	}
 
-	output := make(map[string]interface{}) // Initialize the output map
-	// Iterate through each item in the input
+	output := make(map[string]interface{})
 	for _, itemToInterface := range trueInput {
 		item, ok := itemToInterface.(map[string]interface{})
 		if !ok {
-			return nil, errors.New("$objectsToDocument input must be an array of objects with Code and Value fields")
+			return nil, errors.New("$objectsToDocument input must be an array of objects with Code and Val/Value fields")
 		}
-		// Call setValue for each item to set the value in the output map
+
 		code, ok := item["Code"].(string)
 		if !ok {
 			continue
 		}
-		value := item["Value"]
-		setValue(output, code, value)
+
+		// Try "Val" first, then fall back to "Value"
+		var value interface{}
+		if val, exists := item["Val"]; exists {
+			value = val
+		} else if val, exists := item["Value"]; exists {
+			value = val
+		}
+
+		if value != nil {
+			setValue(output, code, value)
+		}
 	}
 
-	return output, nil // Return the output map
+	return output, nil
 }
 
 // TransformRule defines a transformation rule with a search substring and a new name.
