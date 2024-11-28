@@ -11,12 +11,14 @@ import (
 )
 
 func TestChassis(t *testing.T) {
-	assert.Equal(t, nil, nil)
-
 	tests := []struct {
+		// the name of the test
 		Name               string
+		// the input file (must be JSON)
 		InputFile          string
+		// the jsonata that is applied to the file
 		InputJsonataFile   string
+		// the expected output file that is the result of the transformations
 		ExpectedOutputFile string
 	}{
 		{
