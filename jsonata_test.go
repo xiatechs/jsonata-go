@@ -5,9 +5,9 @@
 package jsonata
 
 import (
-	"github.com/goccy/go-json"
 	"errors"
 	"fmt"
+	"github.com/goccy/go-json"
 	"io/ioutil"
 	"math"
 	"os"
