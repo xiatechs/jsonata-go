@@ -1,9 +1,10 @@
 package jsonata
 
 import (
-	"encoding/json"
 	"os"
 	"testing"
+
+	"github.com/goccy/go-json"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,17 +13,17 @@ import (
 func TestChassis(t *testing.T) {
 	assert.Equal(t, nil, nil)
 
-	tests := []struct{
+	tests := []struct {
 		Name               string
 		InputFile          string
 		InputJsonataFile   string
 		ExpectedOutputFile string
 	}{
 		{
-			Name: "a simple test",
-			InputFile: "extendedTestFiles/case1/input.json",
-			InputJsonataFile: "extendedTestFiles/case1/input.jsonata",
-			ExpectedOutputFile:  "extendedTestFiles/case1/output.json",
+			Name:               "a simple test",
+			InputFile:          "extendedTestFiles/case1/input.json",
+			InputJsonataFile:   "extendedTestFiles/case1/input.jsonata",
+			ExpectedOutputFile: "extendedTestFiles/case1/output.json",
 		},
 	}
 
