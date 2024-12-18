@@ -47,10 +47,10 @@ func runTest(t *testing.T, inputfile, outputfile, jsonatafile string) {
 	inputBytes, err := os.ReadFile(inputfile)
 	require.NoError(t, err)
 
-	jsonataBytes, err := os.ReadFile(outputfile)
+	outputBytes, err := os.ReadFile(outputfile)
 	require.NoError(t, err)
 
-	outputBytes, err := os.ReadFile(jsonatafile)
+	jsonataBytes, err := os.ReadFile(jsonatafile)
 	require.NoError(t, err)
 
 	expr, err := Compile(string(jsonataBytes))

@@ -1,5 +1,3 @@
-# add tests here
-
 ## how?
 
 First, create a folder with a name i.e "exampleFunc"

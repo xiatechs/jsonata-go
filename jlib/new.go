@@ -331,11 +331,12 @@ func ObjectsToDocument(input interface{}) (interface{}, error) {
 			continue
 		}
 
-		// Try "Val" first, then fall back to "Value"
 		var value interface{}
-		if val, exists := item["Val"]; exists {
+		if val, exists := item["Val"]; exists && val != nil {
+			// Use Val only if it's not nil
 			value = val
-		} else if val, exists := item["Value"]; exists {
+		} else if val, exists := item["Value"]; exists && val != nil {
+			// Use Value if Val doesn't exist or was nil
 			value = val
 		}
 
