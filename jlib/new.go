@@ -327,8 +327,8 @@ func ObjectsToDocument(input interface{}) (interface{}, error) {
 		}
 
 		code, ok := item["Code"].(string)
-		if !ok {
-			continue
+		if code == "" || !ok {
+			return nil, errors.New("$objectsToDocument input must contain a 'Code' field that is non-empty string")
 		}
 
 		var value interface{}
