@@ -6,9 +6,9 @@ package main
 
 import (
 	"bytes"
-	"github.com/goccy/go-json"
 	"flag"
 	"fmt"
+	"github.com/goccy/go-json"
 	"log"
 	"net/http"
 	_ "net/http/pprof"

@@ -5,8 +5,8 @@
 package jsonata
 
 import (
-	"github.com/goccy/go-json"
 	"fmt"
+	"github.com/goccy/go-json"
 	"reflect"
 	"regexp"
 	"strings"
